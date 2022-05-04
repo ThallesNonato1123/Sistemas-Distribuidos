@@ -6,9 +6,7 @@ from collections import Counter
 def contadorPalavras(texto):
     count = Counter();
     palavras = texto.split()
-    frequencia_palavras = {}
     for palavra in palavras:
-        if palavra not in frequencia_palavras:
             count[palavra]+=1
     #retorna as 5 palavras mais comuns
     return count.most_common(5)
@@ -25,6 +23,7 @@ def main():
     while True:
         #recebe o arquivo que vai ser lido
         msg = novoSock.recv(1024) 
+        if not msg: break
         try:
             with open(str(msg,encoding='utf-8')) as file:
                 texto = file.read().lower()
