@@ -25,11 +25,13 @@ def main():
     while True:
         #recebe o arquivo que vai ser lido
         msg = novoSock.recv(1024) 
-        if not msg: break
-        with open(str(msg,encoding='utf-8')) as file:
-            texto = file.read().lower()
+        try:
+            with open(str(msg,encoding='utf-8')) as file:
+                texto = file.read().lower()
             #envia as strings em ordem (.send da biblioteca socket não aceita tuple,list e etc.. aparentemente só string)
             novoSock.send(bytes(str(contadorPalavras(texto)),'utf-8'))
+        except FileNotFoundError:
+            novoSock.send(bytes("Erro: o arquivo nao foi encontrado",'utf-8'))
     novoSock.close();
     sock.close(); 
 main()
