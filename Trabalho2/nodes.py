@@ -206,7 +206,7 @@ def find_antecessor(id):
                 conn.close()
                 break
             except:
-                print("ih")
+                pass
             index_id = index_id + 1
 
 
