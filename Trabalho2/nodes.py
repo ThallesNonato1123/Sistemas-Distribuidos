@@ -8,7 +8,7 @@ ID = None
 sucessor = 0
 antecessor = 0
 files = []
-conn = None # conexao local
+self_conn = None # conexao local
 
 nodesList = {
     1: {'host': 'localhost', 'port': 10000},
@@ -29,13 +29,13 @@ def createServerNode(id):
     ID = id
 
     class Node(rpyc.Service):
-        print("Node" + str(id))
+        print("Node " + str(id))
 
         def on_connect(self, conn):
-            print("Conexão estabelecida.")
+            pass
 
         def on_disconnect(self, conn):
-            print("Ralando")
+            pass
 
         def exposed_alterar_sucessor(self, novoValor):
             global sucessor
@@ -43,7 +43,6 @@ def createServerNode(id):
 
         def exposed_alterar_antecessor(self, novoValor):
             global antecessor
-            print("antecessor")
             antecessor = novoValor
 
         # atualiza a tabela. Buscando as chaves que deveriam ter ido para o nó corrente
@@ -60,9 +59,7 @@ def createServerNode(id):
             self.insert(key, file)
 
         # se um nó for retirado do sistema, seus arquivos devem ser redistribuidos aos outros nós
-        # NAO FUNCIONA
         def exposed_redistribute_files(self):
-            print("---exposed_redistribute_files---")
             global antecessor, files
             for k in nodesList.keys():
                 if k == antecessor:
@@ -76,6 +73,12 @@ def createServerNode(id):
         def insert(self, key, file):
             global files
             files.append([key, file])
+            
+            if not os.path.exists("node_" + str(ID)):
+                os.makedirs("node_" + str(ID))
+            
+            with open("node_" + str(ID) + "/copied_file.txt", 'w') as f:
+                f.write(file)
 
         # confere se deve inserir o arquivo neste nó,
         # se sim o insere,
@@ -83,7 +86,7 @@ def createServerNode(id):
         def exposed_insert_file(self, key, file):
             global ID, sucessor
             hashed_key = hash(key)
-            #print(hashed_key)
+            print("hashed_key: " + str(hashed_key))
             # se a chave está entre no intervalo [no atual, sucessor)
             if hashed_key >= ID and hashed_key < sucessor:
                 self.insert(key, file)
@@ -197,7 +200,6 @@ def find_successor(id):
             except:
                 pass
         cont = cont - 1
-    print("\n")
 
 
 def find_antecessor(id):
@@ -229,10 +231,10 @@ def find_antecessor(id):
 
 
 def update_nodes():
-    global ID
+    global ID, self_conn
     find_successor(ID)
     find_antecessor(ID)
-    conn = rpyc.connect(nodesList[ID]['host'], nodesList[ID]['port'])
+    self_conn = rpyc.connect(nodesList[ID]['host'], nodesList[ID]['port'])
     try:
         conn = rpyc.connect(nodesList[antecessor]['host'], nodesList[antecessor]['port'])
         conn.root.update_keys_on_connect()
@@ -248,22 +250,24 @@ def hash(key):
 
 
 def inserir_aquivo():
-    global conn
+    global self_conn
     filename = input("Digite o nome do arquivo: ")
-    conn.root.insert_file(filename, "file1") ######################### 'file1' é um placeholder para um arquivo de verdade ##################################
+    with open(filename, 'r') as f:
+        data = f.read()
+        self_conn.root.insert_file(filename, data)
 
 
 def procurar_arquivo():
-    global conn
+    global self_conn
     filename = input("Digite o nome do arquivo: ")
-    retrieved_name = conn.root.retrieve_file(filename)
-    print(str(retrieved_name))
+    retrieved_file = self_conn.root.retrieve_file(filename)
+    print(str(retrieved_file))
 
 
 def deletar_arquivo():
-    global conn
+    global self_conn
     filename = input("Digite o nome do arquivo: ")
-    conn.root.delete_file(filename)
+    self_conn.root.delete_file(filename)
 
 
 def imprime_arquivos():
@@ -275,22 +279,17 @@ def imprime_arquivos():
 
 
 def redistribui_arquivos():
-    global conn
-    print("A")
-    conn.root.redistribute_files()
-    print("B")
+    global self_conn
+    self_conn.root.redistribute_files()
 
 
 def menu():
-    print("\nEscolha uma das opções:\n1-Inserir um arquivo\n2-Procurar um Arquivo\n3-Deletar um arquivo\n4-Sair\n5- Atualizar Algoritmo\n6- Imprimir Arquivos\n7- Sucessor\n8- Antecessor")
-    #print("\nEscolha uma das opções:\n1-Inserir um arquivo\n2-Procurar um Arquivo\n3-Deletar um arquivo\n4-Sair\n5- Atualizar Algoritmo\n6- Imprimir Arquivos")
-    #print("Escolha uma das opções:\n1-Inserir um arquivo\n2-Procurar um Arquivo\n3-Deletar um arquivo\n4-Sair\n5- Atualizar Algoritmo")
+    print("\nEscolha uma das opções:\n1-Inserir um arquivo\n2-Procurar um Arquivo\n3-Deletar um arquivo\n4-Sair\n5- Atualizar Algoritmo\n6- Imprimir Arquivos\n7- Antecessor\n8- Sucessor")
 
 
 def interface():
     while(True):
         menu()
-        print("\n")
         op = int(input("Selecione sua escolha:"))
         if op == 1:
             inserir_aquivo()
@@ -299,16 +298,16 @@ def interface():
         elif op == 3:
             deletar_arquivo()
         elif op == 4:
-            #redistribui_arquivos()
+            redistribui_arquivos()
             os._exit(0)
         elif op == 5:
             return
         elif op == 6:
             imprime_arquivos()
         elif op == 7:
-            print("sucessor: " + str(sucessor))
-        elif op == 8:
             print("antecessor: " + str(antecessor))
+        elif op == 8:
+            print("sucessor: " + str(sucessor))
 
 
 def main():
