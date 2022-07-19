@@ -176,58 +176,38 @@ def load_node(id):
 
 
 def find_successor(id):
-    cont = (id - 1) % len(nodesList)
     global antecessor
     global sucessor
-
-    if(id == 10):
-        try:
-            conn = rpyc.connect(nodesList[1]['host'], nodesList[1]['port'])
-            sucessor = cont
-            conn.root.alterar_sucessor(id)
-            conn.close()
-        except:
-            pass
-    while(cont > 0):
-        if(id != cont):
+    index_id = list(nodesList).index(id)
+    while(list(nodesList)[(index_id - 1) % len(nodesList)] != id):
             try:
                 conn = rpyc.connect(
-                    nodesList[cont]['host'], nodesList[cont]['port'])
-                antecessor = cont
+                    nodesList[list(nodesList)[(index_id - 1) % len(nodesList)]]['host'], nodesList[list(nodesList)[(index_id - 1) % len(nodesList)]]['port'])
+                antecessor = list(nodesList)[(index_id - 1) % len(nodesList)]
                 conn.root.alterar_sucessor(id)
                 conn.close()
                 break
             except:
                 pass
-        cont = cont - 1
+            index_id = index_id - 1
 
 
 def find_antecessor(id):
     global sucessor
     global antecessor
-    cont = (id + 1) % len(nodesList)
-
-    if(id == 1):
-        try:
-            conn = rpyc.connect(nodesList[10]['host'], nodesList[10]['port'])
-            antecessor = cont
-            conn.root.alterar_sucessor(id)
-            conn.close()
-        except:
-            pass
-
-    while(cont <= len(nodesList)):
-        if(id != cont):
+    index_id = list(nodesList).index(id)
+    
+    while( list(nodesList)[(index_id + 1) % len(nodesList)] != id):
             try:
                 conn = rpyc.connect(
-                    nodesList[cont]['host'], nodesList[cont]['port'])
-                sucessor = cont
+                    nodesList[ list(nodesList)[(index_id + 1) % len(nodesList)]]['host'], nodesList[ list(nodesList)[(index_id + 1) % len(nodesList)]]['port'])
+                sucessor =  list(nodesList)[(index_id + 1) % len(nodesList)]
                 conn.root.alterar_antecessor(id)
                 conn.close()
                 break
             except:
-                pass
-        cont = cont + 1
+                print("ih")
+            index_id = index_id + 1
 
 
 def update_nodes():
