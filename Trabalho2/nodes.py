@@ -77,7 +77,7 @@ def createServerNode(id):
             if not os.path.exists("node_" + str(ID)):
                 os.makedirs("node_" + str(ID))
             
-            with open("node_" + str(ID) + "/copied_file.txt", 'w') as f:
+            with open("node_" + str(ID) + "/" + str(key), 'w') as f:
                 f.write(file)
 
         # confere se deve inserir o arquivo neste nó,
